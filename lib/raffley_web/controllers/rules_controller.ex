@@ -7,7 +7,7 @@ defmodule RaffleyWeb.RulesController do
     emojis = ~w(🤩 🥳 😎 ) |> Enum.random() |> String.duplicate(5)
 
     rules = Rules.list_rules()
-    render(conn, :index, emojis: emojis, rules: rules)
+    render(conn, :index, emojis: emojis, rules: rules, page_title: "Rules")
   end
 
   def show(conn, %{"id" => id}) do
