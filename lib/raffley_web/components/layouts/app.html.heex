@@ -7,13 +7,18 @@
     </div>
     <ul class="flex items-center gap-4 text-sm font-semibold leading-6 text-zinc-900">
       <li>
-        <.link navigate="/raffles" class="hover:text-zinc-700">
+        <.link navigate={~p"/raffles"} class="hover:text-zinc-700">
           Raffles
         </.link>
       </li>
       <li>
-        <.link navigate="/rules" class="hover:text-zinc-700">
+        <.link navigate={~p"/rules"} class="hover:text-zinc-700">
           Rules
+        </.link>
+      </li>
+      <li>
+        <.link navigate={~p"/admin/raffles"} class="hover:text-zinc-700">
+          Admin
         </.link>
       </li>
     </ul>
