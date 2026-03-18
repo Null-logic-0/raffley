@@ -30,11 +30,12 @@ defmodule Raffley.MixProject do
   # Specifies your project dependencies.
   #
   # Type `mix help deps` for examples and options.
-  # {:phoenix, github: "phoenixframework/phoenix", ref: "bd589f1", override: true},
 
   defp deps do
     [
+      {:bcrypt_elixir, "~> 3.0"},
       {:phoenix, "~> 1.7.21"},
+      # {:phoenix, github: "phoenixframework/phoenix", ref: "bd589f1", override: true},
       {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0"},
