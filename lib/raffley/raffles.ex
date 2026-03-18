@@ -1,7 +1,7 @@
 defmodule Raffley.Raffles do
   import Ecto.Query
   alias Raffley.Raffles.Raffle
-  alias Raffley.Charities.Charity
+  # alias Raffley.Charities.Charity
   alias Raffley.Repo
 
   def list_raffles, do: Repo.all(Raffle)
