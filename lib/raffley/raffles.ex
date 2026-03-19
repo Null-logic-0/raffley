@@ -4,6 +4,16 @@ defmodule Raffley.Raffles do
   # alias Raffley.Charities.Charity
   alias Raffley.Repo
 
+  @pubsub Raffley.PubSub
+
+  def subscribe(raffle_id) do
+    Phoenix.PubSub.subscribe(@pubsub, "raffle:#{raffle_id}")
+  end
+
+  def broadcast(raffle_id, message) do
+    Phoenix.PubSub.broadcast(@pubsub, "raffle:#{raffle_id}", message)
+  end
+
   def list_raffles, do: Repo.all(Raffle)
 
   def filter_raffles(filter) do
@@ -55,7 +65,15 @@ defmodule Raffley.Raffles do
   def get_raffle!(id) do
     Raffle
     |> Repo.get!(id)
-    |> Repo.preload(:charity)
+    |> Repo.preload([:charity, :winning_ticket])
+  end
+
+  def list_tickets(raffle) do
+    raffle
+    |> Ecto.assoc(:tickets)
+    |> preload(:user)
+    |> order_by(desc: :inserted_at)
+    |> Repo.all()
   end
 
   def featured_raffles(raffle) do

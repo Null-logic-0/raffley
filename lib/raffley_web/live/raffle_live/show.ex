@@ -9,17 +9,26 @@ defmodule RaffleyWeb.RaffleLive.Show do
   on_mount {RaffleyWeb.UserAuth, :mount_current_user}
 
   def mount(_params, _session, socket) do
-    _changeset = Tickets.change_ticket(%Ticket{})
-    socket = assign(socket, :form, to_form(%{}))
+    changeset = Tickets.change_ticket(%Ticket{})
+    socket = assign(socket, :form, to_form(changeset))
     {:ok, socket}
   end
 
   def handle_params(%{"id" => id}, _uri, socket) do
+    if connected?(socket) do
+      Raffles.subscribe(id)
+    end
+
     raffle = Raffles.get_raffle!(id)
+
+    tickets = Raffles.list_tickets(raffle)
 
     socket =
       socket
       |> assign(:raffle, raffle)
+      |> stream(:tickets, tickets)
+      |> assign(:ticket_count, Enum.count(tickets))
+      |> assign(:ticket_sum, Enum.sum_by(tickets, fn t -> t.price end))
       |> assign(:page_title, raffle.prize)
       |> assign_async(:featured_raffles, fn ->
         {:ok, %{featured_raffles: Raffles.featured_raffles(raffle)}}
@@ -32,6 +41,12 @@ defmodule RaffleyWeb.RaffleLive.Show do
   def render(assigns) do
     ~H"""
     <div class="raffle-show">
+      <.banner :if={@raffle.winning_ticket}>
+        <.icon name="hero-sparkles-solid" /> Ticket #{@raffle.winning_ticket.id} Wins!
+        <:details>
+          {@raffle.winning_ticket.comment}
+        </:details>
+      </.banner>
       <div class="raffle">
         <img src={@raffle.image_path} src={@raffle.prize} />
         <section>
@@ -48,13 +63,16 @@ defmodule RaffleyWeb.RaffleLive.Show do
           <div class="description">
             {@raffle.description}
           </div>
+          <div class="totals">
+            {@ticket_count} Tickets Sold &bull; ${@ticket_sum}
+          </div>
         </section>
       </div>
       <div class="activity">
         <div class="left">
           <div :if={@raffle.status == :open}>
             <%= if @current_user do %>
-              <.form for={@form} id="ticket-form">
+              <.form for={@form} id="ticket-form" phx-change="validate" phx-submit="save">
                 <.input field={@form[:comment]} placeholder="Comment..." autofocus={true} />
                 <.button>
                   Get A Ticket
@@ -65,6 +83,9 @@ defmodule RaffleyWeb.RaffleLive.Show do
                 Log In To Get A Ticket
               </.link>
             <% end %>
+          </div>
+          <div id="tickets" phx-update="stream">
+            <.ticket :for={{dom_id, ticket} <- @streams.tickets} ticket={ticket} id={dom_id} />
           </div>
         </div>
         <div class="right">
@@ -100,5 +121,69 @@ defmodule RaffleyWeb.RaffleLive.Show do
       </ul>
     </.async_result>
     """
+  end
+
+  attr :id, :string, required: true
+  attr :ticket, Ticket, required: true
+
+  def ticket(assigns) do
+    ~H"""
+    <div class="ticket" id={@id}>
+      <span class="timeline"></span>
+      <section>
+        <div class="price-paid">
+          ${@ticket.price}
+        </div>
+        <div>
+          <span class="username">
+            {@ticket.user.username}
+          </span>
+          bought a ticket
+          <blockquote>
+            {@ticket.comment}
+          </blockquote>
+        </div>
+      </section>
+    </div>
+    """
+  end
+
+  def handle_event("validate", %{"ticket" => ticket_params}, socket) do
+    changeset = Tickets.change_ticket(%Ticket{}, ticket_params)
+    socket = assign(socket, :form, to_form(changeset, action: :validate))
+    {:noreply, socket}
+  end
+
+  def handle_event("save", %{"ticket" => ticket_params}, socket) do
+    %{raffle: raffle, current_user: user} = socket.assigns
+
+    case Tickets.create_ticket(raffle, user, ticket_params) do
+      {:ok, _ticket} ->
+        changeset = Tickets.change_ticket(%Ticket{})
+
+        socket =
+          socket
+          |> assign(:form, to_form(changeset))
+
+        {:noreply, socket}
+
+      {:error, changeset} ->
+        socket = assign(socket, :form, to_form(changeset))
+        {:noreply, socket}
+    end
+  end
+
+  def handle_info({:ticket_created, ticket}, socket) do
+    socket =
+      socket
+      |> stream_insert(:tickets, ticket, at: 0)
+      |> update(:ticket_count, &(&1 + 1))
+      |> update(:ticket_sum, &(&1 + ticket.price))
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:raffle_updated, raffle}, socket) do
+    {:noreply, assign(socket, :raffle, raffle)}
   end
 end
