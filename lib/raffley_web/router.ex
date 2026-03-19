@@ -45,6 +45,8 @@ defmodule RaffleyWeb.Router do
       live "/charities/new", CharityLive.Form, :new
       live "/charities/:id", CharityLive.Show, :show
       live "/charities/:id/edit", CharityLive.Form, :edit
+
+      live "/dashboard", DashboardLive, :index
     end
   end
 

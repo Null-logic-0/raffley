@@ -10,6 +10,42 @@ defmodule Raffley.Admin do
     |> Repo.all()
   end
 
+  # def ticket_tallies do
+  #   query =
+  #     from r in Raffle,
+  #       left_join: c in assoc(r, :charity),
+  #       left_join: t in assoc(r, :tickets),
+  #       group_by: [r.prize, c.name],
+  #       order_by: [desc: coalesce(sum(t.price), 0)],
+  #       select: %{
+  #         prize: r.prize,
+  #         charity: c.name,
+  #         ticket_count: count(t.id),
+  #         ticket_total: coalesce(sum(t.price), 0)
+  #       }
+
+  #   Repo.all(query)
+  # end
+
+  def ticket_tallies do
+    query =
+      from r in "raffles",
+        join: c in "charities",
+        on: r.charity_id == c.id,
+        left_join: t in "tickets",
+        on: t.raffle_id == r.id,
+        order_by: [desc: coalesce(sum(t.price), 0)],
+        group_by: [r.prize, c.name],
+        select: %{
+          prize: r.prize,
+          charity: c.name,
+          ticket_count: count(t.id),
+          ticket_total: coalesce(sum(t.price), 0)
+        }
+
+    Repo.all(query)
+  end
+
   def create_raffle(attrs \\ %{}) do
     %Raffle{}
     |> Raffle.changeset(attrs)
