@@ -5,6 +5,7 @@ defmodule RaffleyWeb.RaffleLive.Show do
   alias Raffley.Raffles
   alias Raffley.Tickets
   alias Raffley.Tickets.Ticket
+  alias RaffleyWeb.Presence
 
   on_mount {RaffleyWeb.UserAuth, :mount_current_user}
 
@@ -15,9 +16,19 @@ defmodule RaffleyWeb.RaffleLive.Show do
   end
 
   def handle_params(%{"id" => id}, _uri, socket) do
+    %{current_user: current_user} = socket.assigns
+
     if connected?(socket) do
       Raffles.subscribe(id)
+
+      if current_user do
+        Presence.track_user(id, current_user)
+        Presence.subscribe(id)
+      end
     end
+
+    presences = Presence.list_users(id)
+     
 
     raffle = Raffles.get_raffle!(id)
 
@@ -27,6 +38,7 @@ defmodule RaffleyWeb.RaffleLive.Show do
       socket
       |> assign(:raffle, raffle)
       |> stream(:tickets, tickets)
+      |> stream(:presences, presences)
       |> assign(:ticket_count, Enum.count(tickets))
       |> assign(:ticket_sum, Enum.sum_by(tickets, fn t -> t.price end))
       |> assign(:page_title, raffle.prize)
@@ -90,9 +102,24 @@ defmodule RaffleyWeb.RaffleLive.Show do
         </div>
         <div class="right">
           <.featured_raffles raffles={@featured_raffles} />
+          <.raffle_watchers :if={@current_user} presences={@streams.presences} />
         </div>
       </div>
     </div>
+    """
+  end
+
+  def raffle_watchers(assigns) do
+    ~H"""
+    <section>
+      <h4>Who's Here?</h4>
+      <ul class="presences" id="raffle_watchers" phx-update="stream">
+        <li :for={{dom_id, %{id: username, metas: metas}} <- @presences} <- @presences} id={dom_id}>
+          <.icon name="hero-user-circle-solid" class="w-5 h-5" />
+          {username} ({length(metas)})
+        </li>
+      </ul>
+    </section>
     """
   end
 
@@ -185,5 +212,17 @@ defmodule RaffleyWeb.RaffleLive.Show do
 
   def handle_info({:raffle_updated, raffle}, socket) do
     {:noreply, assign(socket, :raffle, raffle)}
+  end
+
+  def handle_info({:user_joined, presence}, socket) do
+    {:noreply, stream_insert(socket, :presences, presence)}
+  end
+
+  def handle_info({:user_left, presence}, socket) do
+    if presence.metas == [] do
+      {:noreply, stream_delete(socket, :presences, presence)}
+    else
+      {:noreply, stream_insert(socket, :presences, presence)}
+    end
   end
 end
