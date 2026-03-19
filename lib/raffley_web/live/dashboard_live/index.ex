@@ -12,6 +12,11 @@ defmodule RaffleyWeb.DashboardLive do
     ~H"""
     <.header>
       Dashboard
+      <:actions>
+        <.link href={~p"/export/report"} class="button">
+          <.icon name="hero-arrow-down-tray" class="h-4 w-4" /> Export
+        </.link>
+      </:actions>
     </.header>
     <.table id="report" rows={@data}>
       <:col :let={item} label="Prize">
