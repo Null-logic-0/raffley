@@ -7,7 +7,7 @@ defmodule Raffley.Raffles.Raffle do
     field :description, :string
     field :prize, :string
     field :ticket_price, :integer, default: 1
-    field :image_path, :string, default: "images/placeholder.jpg"
+    field :image_path, :string, default: "/images/placeholder.jpg"
 
     belongs_to :charity, Raffley.Charities.Charity
     has_many :tickets, Raffley.Tickets.Ticket

@@ -5,10 +5,17 @@ defmodule RaffleyWeb.AdminRaffleLive.Form do
   alias Raffley.Raffles.Raffle
   alias Raffley.Charities
 
+  import RaffleyWeb.CustomComponents
+
   def mount(params, _session, socket) do
     socket =
       socket
       |> assign(:charity_options, Charities.charity_names_and_ids())
+      |> allow_upload(:image,
+        accept: ~w(.png .jpeg .jpg),
+        max_entries: 1,
+        max_file_size: 10_000_000
+      )
       |> apply_action(socket.assigns.live_action, params)
 
     {:ok, socket}
@@ -39,7 +46,14 @@ defmodule RaffleyWeb.AdminRaffleLive.Form do
     <.header>
       {@page_title}
     </.header>
-    <.simple_form for={@form} id="raffle-form" phx-submit="save" phx-change="validate">
+
+    <.simple_form
+      for={@form}
+      id="raffle-form"
+      phx-submit="save"
+      phx-change="validate"
+      phx-drop-target={@uploads.image.ref}
+    >
       <.input field={@form[:prize]} label="Prize" />
 
       <.input field={@form[:description]} type="textarea" label="Description" phx-debounce="blur" />
@@ -66,7 +80,26 @@ defmodule RaffleyWeb.AdminRaffleLive.Form do
         options={@charity_options}
       />
 
-      <.input field={@form[:image_path]} label="Image Path" />
+      <div class="space-y-4">
+        
+    <!-- Upload -->
+        <.upload_dropzone upload={@uploads.image} />
+        
+    <!-- Existing image (edit mode) -->
+        <.existing_image
+          :if={@raffle.image_path && @uploads.image.entries == []}
+          src={@raffle.image_path}
+        />
+        
+    <!-- New upload preview -->
+        <div class="flex gap-4 flex-wrap">
+          <.upload_preview
+            :for={entry <- @uploads.image.entries}
+            entry={entry}
+            upload={@uploads.image}
+          />
+        </div>
+      </div>
 
       <:actions>
         <.button phx-disable-with="Saving...">
@@ -85,8 +118,34 @@ defmodule RaffleyWeb.AdminRaffleLive.Form do
     {:noreply, socket}
   end
 
+  # def handle_event("save", %{"raffle" => raffle_params}, socket) do
+  #   save_raffle(socket, socket.assigns.live_action, raffle_params)
+  # end
+
   def handle_event("save", %{"raffle" => raffle_params}, socket) do
+    uploads_dir = Application.app_dir(:raffley, "priv/static/uploads")
+    File.mkdir_p!(uploads_dir)
+
+    uploaded_files =
+      consume_uploaded_entries(socket, :image, fn meta, entry ->
+        dest = Path.join(uploads_dir, "#{entry.uuid}-#{entry.client_name}")
+
+        File.cp!(meta.path, dest)
+
+        {:ok, "/uploads/#{Path.basename(dest)}"}
+      end)
+
+    raffle_params =
+      case uploaded_files do
+        [path] -> Map.put(raffle_params, "image_path", path)
+        [] -> raffle_params
+      end
+
     save_raffle(socket, socket.assigns.live_action, raffle_params)
+  end
+
+  def handle_event("cancel-upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :image, ref)}
   end
 
   defp save_raffle(socket, :new, raffle_params) do
