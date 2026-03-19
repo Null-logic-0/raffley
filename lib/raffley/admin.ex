@@ -35,6 +35,7 @@ defmodule Raffley.Admin do
         left_join: t in "tickets",
         on: t.raffle_id == r.id,
         order_by: [desc: coalesce(sum(t.price), 0)],
+        having: count(t.id) > 0 and coalesce(sum(t.price), 0) > 0,
         group_by: [r.prize, c.name],
         select: %{
           prize: r.prize,
