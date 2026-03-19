@@ -1,18 +1,51 @@
-# Raffley
+# 🎟️ **Raffley**
 
-To start your Phoenix server:
+Raffley is a modern platform for creating, managing, and participating in raffles and giveaways. It enables individuals, creators, and businesses to run transparent, engaging, and scalable prize campaigns.
 
-  * Run `mix setup` to install and setup dependencies
-  * Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+### 🚀 **Features**
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+Real-time Updates: Powered by Phoenix Channels and LiveView for instantaneous UI responses.
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+Robust Backend: Utilizes Ecto for secure and efficient PostgreSQL data management.
 
-## Learn more
+Modern Styling: Responsive and clean UI built with Tailwind CSS.
 
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+### 🛠 **Tech Stack**
+Language: Elixir
+
+Framework: Phoenix (LiveView)
+
+Database: PostgreSQL
+
+Styling: Tailwind CSS
+
+Testing: ExUnit
+
+
+## **Installation**
+
+**1.Clone the repository**
+
+```bash 
+git clone https://github.com/Null-logic-0/raffley.git
+cd raffley
+```
+**2.Install dependencies**
+```bash 
+mix deps.get
+```
+
+**3.Setup the database**
+```bash 
+mix setup
+```
+
+**4.Start the Phoenix server**
+```bash 
+mix phx.server
+```
+
+## 📄 **License**
+This project is licensed under the MIT License - see the 
+<a href="/LICENSE">**LICENSE**</a> 
+file for details.
