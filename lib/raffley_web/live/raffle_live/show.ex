@@ -1,9 +1,16 @@
 defmodule RaffleyWeb.RaffleLive.Show do
   use RaffleyWeb, :live_view
+
   import RaffleyWeb.CustomComponents
   alias Raffley.Raffles
+  alias Raffley.Tickets
+  alias Raffley.Tickets.Ticket
+
+  on_mount {RaffleyWeb.UserAuth, :mount_current_user}
 
   def mount(_params, _session, socket) do
+    _changeset = Tickets.change_ticket(%Ticket{})
+    socket = assign(socket, :form, to_form(%{}))
     {:ok, socket}
   end
 
@@ -44,7 +51,22 @@ defmodule RaffleyWeb.RaffleLive.Show do
         </section>
       </div>
       <div class="activity">
-        <div class="left"></div>
+        <div class="left">
+          <div :if={@raffle.status == :open}>
+            <%= if @current_user do %>
+              <.form for={@form} id="ticket-form">
+                <.input field={@form[:comment]} placeholder="Comment..." autofocus={true} />
+                <.button>
+                  Get A Ticket
+                </.button>
+              </.form>
+            <% else %>
+              <.link href={~p"/users/log-in"} class="button">
+                Log In To Get A Ticket
+              </.link>
+            <% end %>
+          </div>
+        </div>
         <div class="right">
           <.featured_raffles raffles={@featured_raffles} />
         </div>

@@ -11,6 +11,8 @@ defmodule Raffley.Accounts.User do
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
 
+    has_many :tickets, Raffley.Tickets.Ticket
+
     timestamps(type: :utc_datetime)
   end
 

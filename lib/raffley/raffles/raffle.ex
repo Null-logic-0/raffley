@@ -10,6 +10,8 @@ defmodule Raffley.Raffles.Raffle do
     field :image_path, :string, default: "images/placeholder.jpg"
 
     belongs_to :charity, Raffley.Charities.Charity
+    has_many :tickets, Raffley.Tickets.Ticket
+
     timestamps(type: :utc_datetime)
   end
 
